@@ -31,5 +31,7 @@ public interface IBattler
     /// </summary>
     /// <param name="damage">내가 받은 데미지</param>
     void Defence(float damage);
-    
+
+    Action<float> onHitDamage { get; set; }
+
 }

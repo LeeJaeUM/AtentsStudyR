@@ -196,6 +196,7 @@ public class Enemy : RecycleObject, IBattler, IHealth
     /// 이 캐릭터가 죽었을 때 실행되는 델리게이트
     /// </summary>
     public Action onDie { get; set; }
+    public Action<float> onHitDamage { get; set; }
 
     [System.Serializable]   // 이게 있어야 구조체 내용을 인스팩터 창에서 수정할 수 있다.
     public struct ItemDropInfo
@@ -219,7 +220,6 @@ public class Enemy : RecycleObject, IBattler, IHealth
     Animator animator;
     NavMeshAgent agent;
     SphereCollider bodyCollider;
-    SphereCollider attackArea;
     Rigidbody rigid;
     EnemyHealthBar hpBar;
     ParticleSystem dieEffect;
@@ -232,17 +232,7 @@ public class Enemy : RecycleObject, IBattler, IHealth
         animator = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
 
-        SphereCollider[] colliders = GetComponents<SphereCollider>();
-        if (colliders[0].isTrigger)
-        {
-            attackArea = colliders[0];
-            bodyCollider = colliders[1];
-        }
-        else
-        {
-            attackArea = colliders[1];
-            bodyCollider = colliders[0];
-        }
+        bodyCollider = GetComponent<SphereCollider>();
 
         rigid = GetComponent<Rigidbody>();
 
@@ -278,27 +268,7 @@ public class Enemy : RecycleObject, IBattler, IHealth
         onStateUpdate();        
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        // 추적상태이고 플레이어가 들어왔으면
-        if(State == EnemyState.Chase && other.CompareTag("Player"))
-        {
-            attackTarget = other.GetComponent<IBattler>();  // 공격 대상 저장해 놓기
-            State = EnemyState.Attack;
-        }
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            attackTarget = null;
-            if( State != EnemyState.Dead )
-            {
-                State = EnemyState.Chase;
-            }
-        }
-    }
+  
 
     /// <summary>
     /// Wait 상태용 업데이트 함수
@@ -455,7 +425,9 @@ public class Enemy : RecycleObject, IBattler, IHealth
         if(IsAlive) // 살아있을 때만 데미지를 받음
         {
             animator.SetTrigger("Hit");                 // 애니메이션 재생
-            HP -= MathF.Max(0, damage - DefencePower);  // 최종 데미지 계산해서 적용
+            float hitDamage = MathF.Max(0, damage - DefencePower);  // 0 이하로는 데미지가 내려가지 않는다.
+            onHitDamage?.Invoke(hitDamage);
+            HP -= hitDamage;
             //Debug.Log($"적이 맞았다. 남은 HP = {HP}");
         }
     }
@@ -555,11 +527,7 @@ public class Enemy : RecycleObject, IBattler, IHealth
 
         Handles.DrawWireDisc(transform.position, transform.up, nearSightRange);         // 근거리 시야 범위 그리기
 
-        if(attackArea != null)
-        {
-            Handles.color = Color.red;
-            Handles.DrawWireDisc(transform.position, transform.up, attackArea.radius, 5);   // 공격 범위 그리기
-        }
+
     }
 
     public void Test_DropItems(int testCount)

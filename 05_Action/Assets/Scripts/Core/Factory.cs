@@ -12,6 +12,7 @@ public class Factory : Singleton<Factory>
     ItemPool itemPool;
     HitEffectPool hitEffectPool;
     EnemyPool enemyPool;
+    DamageTextPool damageTextPool;
 
     protected override void OnInitialize()
     {
@@ -25,6 +26,15 @@ public class Factory : Singleton<Factory>
 
         enemyPool = GetComponentInChildren<EnemyPool>();
         if (enemyPool != null) enemyPool.Initialize();
+
+        damageTextPool = GetComponentInChildren<DamageTextPool>();
+        if (damageTextPool != null) damageTextPool.Initialize();
+    }
+
+
+    public DamageText GetDamageText(Vector3 position)
+    {
+        return damageTextPool.GetObject(position);
     }
 
     /// <summary>

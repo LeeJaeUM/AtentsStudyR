@@ -246,7 +246,9 @@ public class Player : MonoBehaviour, IHealth, IMana, IEquipTarget, IBattler
     /// 무기 컬라이더 켜고 끄는 신호를 보내는 델리게이트
     /// </summary>
     Action<bool> onWeaponBladeEnabe;
-    
+
+    public Action<float> onHitDamage { get; set; }
+
     // 컴포넌트들
     Animator animator;
     CharacterController characterController;
@@ -651,7 +653,9 @@ public class Player : MonoBehaviour, IHealth, IMana, IEquipTarget, IBattler
     {
         if(IsAlive)
         {
-            HP -= MathF.Max(0, damage - DefencePower);  // 0 이하로는 데미지가 내려가지 않는다.
+            float hitDamage = MathF.Max(0, damage - DefencePower);  // 0 이하로는 데미지가 내려가지 않는다.
+            onHitDamage?.Invoke(hitDamage);
+            HP -= hitDamage;
         }
     }
 
